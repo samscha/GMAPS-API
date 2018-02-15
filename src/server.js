@@ -25,7 +25,7 @@ const loadFile = _ => {
   places = JSON.parse(fs.readFileSync('places.txt', 'utf8')).places;
 };
 
-loadFile();
+// loadFile();
 
 server.get('/places', (req, res) => {
   console.log(places);
@@ -53,11 +53,16 @@ server.post('/places', (req, res) => {
     redirect: 'follow',
   })
     .then(response => response.json())
-    .then(data => data.results.forEach(place => places.push(place)))
-    .then(writeToFile())
+    .then(data => {
+      data.results.forEach(
+        place => (!places.includes(place) ? places.push(place) : null),
+      );
+      writeToFile();
+    })
+    .then(res.status(STATUS.OK).send('OK'))
     .catch(err => console.error(err));
 
-  res.status(STATUS.OK).send('ok');
+  // res.status(STATUS.OK).send('ok');
 });
 
 server.listen(3000);
