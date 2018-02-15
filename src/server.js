@@ -36,20 +36,22 @@ const fetchData = (res, req, q, n = -1) => {
     .then(
       _ =>
         n === 1
-          ? res.status(STATUS.OK).send(cache[q][0])
+          ? fetchDetailedData(res, req, cache[q][0].place_id)
           : res.status(STATUS.OK).send(cache[q]),
     )
     .catch(err => console.error(err));
 };
 
-const detailFetch = placeId => {
-  console.log(placeId);
+const fetchDetailedData = (res, req, placeId) => {
+  if (cache[placeId] !== undefined) {
+    res.status(STATUS.OK).send(cache[placeId]);
+    return;
+  }
+
   fetch(`${detailSearchURL}/${output}?placeid=${placeId}&key=${key}`)
     .then(response => response.json())
-    .then(
-      data =>
-        data.status === 'OK' ? place.push(data.result) : console.log(data),
-    )
+    .then(data => (cache[placeId] = data.result))
+    .then(_ => res.status(STATUS.OK).send(cache[placeId]))
     .catch(err => console.log(err));
 };
 
