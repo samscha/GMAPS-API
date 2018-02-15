@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/samscha/GMAPS-API/issues"
   },
-  "homepage": "https://github.com/samscha/GMAPS-API#readme"
+  "homepage": "https://github.com/samscha/GMAPS-API#readme",
+  "dependencies": {
+    "node-fetch": "^2.0.0"
+  }
 }
