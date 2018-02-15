@@ -28,7 +28,6 @@ const loadFile = _ => {
 loadFile();
 
 server.get('/places', (req, res) => {
-  console.log(places);
   res.status(STATUS.OK).send(
     places.map(place => {
       return `${place.name}: ${place.formatted_address}`;
@@ -53,7 +52,13 @@ server.post('/places', (req, res) => {
     .then(response => response.json())
     .then(data => {
       data.results.forEach(
-        place => (!places.includes(place) ? places.push(place) : null),
+        place =>
+          places.filter(
+            placeCheck =>
+              placeCheck.formatted_address === place.formatted_address,
+          ).length > 0
+            ? null
+            : places.push(place),
       );
       writeToFile();
     })
