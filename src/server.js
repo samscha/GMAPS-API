@@ -22,15 +22,26 @@ const server = express();
 server.use(bodyParser.json());
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
-/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ DATA ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ CACHE *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
-let places = [];
-let placesDetailed = [];
 const cache = {};
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* METHODS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+const fetchData = (res, req, q, n = -1) => {
+  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`)
+    .then(response => response.json())
+    .then(data => (cache[q] = data.results))
+    .then(
+      _ =>
+        n === 1
+          ? res.status(STATUS.OK).send(cache[q][0])
+          : res.status(STATUS.OK).send(cache[q]),
+    )
+    .catch(err => console.error(err));
+};
+
 const detailFetch = placeId => {
   console.log(placeId);
   fetch(`${detailSearchURL}/${output}?placeid=${placeId}&key=${key}`)
@@ -57,13 +68,7 @@ server.get('/place', (req, res) => {
     return;
   }
 
-  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`)
-    .then(response => response.json())
-    .then(data => {
-      cache[q] = data.results;
-      res.status(STATUS.OK).send(data.results[0]);
-    })
-    .catch(err => console.error(err));
+  fetchData(res, req, q, 1);
 });
 
 server.get('/places', (req, res) => {
@@ -74,10 +79,7 @@ server.get('/places', (req, res) => {
     return;
   }
 
-  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`)
-    .then(response => response.json())
-    .then(data => (cache[q] = data))
-    .catch(err => console.error(err));
+  fetchData(res, req, q);
 });
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
