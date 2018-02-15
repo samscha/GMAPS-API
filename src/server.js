@@ -13,9 +13,11 @@ server.use(bodyParser.json());
 
 const key = config.gMap.key;
 const output = config.OUTPUT_TYPE;
-const URL = config.gMap.baseURL;
+const textSearchURL = config.gMap.textSearchURL;
+const detailSearchURL = config.gMap.detailSearchURL;
 
 let places = [];
+let place = [];
 
 const writeToFile = _ => {
   fs.writeFileSync('places.txt', JSON.stringify({ places }), 'utf8');
@@ -27,12 +29,26 @@ const loadFile = _ => {
 
 loadFile();
 
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SERVER CALLS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 server.get('/places', (req, res) => {
   res.status(STATUS.OK).send(
     places.map(place => {
       return `${place.name}: ${place.formatted_address}`;
     }),
   );
+});
+
+server.get('/place', (req, res) => {
+  fetch(`${detailSearchURL}/${output}?placeid=${places[0].place_id}&key=${key}`)
+    .then(response => response.json())
+    .then(
+      data =>
+        data.status === 'OK'
+          ? res.status(STATUS.OK).send(data.result.opening_hours)
+          : res.status(STATUS.USER_ERROR).send(),
+    )
+    .catch(err => console.log(err));
 });
 
 server.post('/places', (req, res) => {
@@ -43,7 +59,7 @@ server.post('/places', (req, res) => {
     return;
   }
 
-  fetch(`${URL}/${output}?query=${q}&key=${key}`, {
+  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`, {
     method: 'GET',
     headers: {},
     body: null,
