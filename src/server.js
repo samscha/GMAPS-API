@@ -1,35 +1,72 @@
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* IMPORTS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 const fs = require('fs');
 const bodyParser = require('body-parser');
 const express = require('express');
 const fetch = require('node-fetch');
-
 const config = require('../config.js');
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ CONSTANTS *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 const STATUS = config.STATUS;
-const port = config.port;
 
-const server = express();
-server.use(bodyParser.json());
+const port = config.port;
 
 const key = config.gMap.key;
 const output = config.OUTPUT_TYPE;
 const textSearchURL = config.gMap.textSearchURL;
 const detailSearchURL = config.gMap.detailSearchURL;
 
+const server = express();
+server.use(bodyParser.json());
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ DATA ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 let places = [];
 let place = [];
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* METHODS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 const writeToFile = _ => {
   fs.writeFileSync('places.txt', JSON.stringify({ places }), 'utf8');
+};
+
+const deleteFile = _ => {
+  fs.writeFileSync('places.txt', JSON.stringify({ places: [] }), 'utf8');
 };
 
 const loadFile = _ => {
   places = JSON.parse(fs.readFileSync('places.txt', 'utf8')).places;
 };
 
-loadFile();
+const detailFetch = (res, req) => {
+  fetch(`${detailSearchURL}/${output}?placeid=${places[0].place_id}&key=${key}`)
+    .then(response => response.json())
+    .then(
+      data =>
+        data.status === 'OK'
+          ? res.status(STATUS.OK).send(data.result.adr_address)
+          : res.status(STATUS.USER_ERROR).send(),
+    )
+    .catch(err => console.log(err));
+};
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 
-/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SERVER CALLS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ SCRIPTS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+loadFile();
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SERVER ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 server.get('/places', (req, res) => {
   res.status(STATUS.OK).send(
@@ -37,18 +74,6 @@ server.get('/places', (req, res) => {
       return `${place.name}: ${place.formatted_address}`;
     }),
   );
-});
-
-server.get('/place', (req, res) => {
-  fetch(`${detailSearchURL}/${output}?placeid=${places[0].place_id}&key=${key}`)
-    .then(response => response.json())
-    .then(
-      data =>
-        data.status === 'OK'
-          ? res.status(STATUS.OK).send(data.result.opening_hours)
-          : res.status(STATUS.USER_ERROR).send(),
-    )
-    .catch(err => console.log(err));
 });
 
 server.post('/places', (req, res) => {
@@ -59,12 +84,7 @@ server.post('/places', (req, res) => {
     return;
   }
 
-  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`, {
-    method: 'GET',
-    headers: {},
-    body: null,
-    redirect: 'follow',
-  })
+  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`)
     .then(response => response.json())
     .then(data => {
       data.results.forEach(
@@ -82,4 +102,31 @@ server.post('/places', (req, res) => {
     .catch(err => console.error(err));
 });
 
+server.get('/place', (req, res) => {
+  detailFetch(res, req);
+});
+
+server.post('/place', (req, res) => {
+  const q = req.body.query;
+
+  if (!q) {
+    detailFetch(res, req);
+    return;
+  }
+
+  console.log(q);
+  detailFetch(res, req);
+});
+
+server.delete('/places', (req, res) => {
+  places = [];
+  writeToFile();
+  res.status(STATUS.OK).send('Delete successful.');
+});
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* LISTEN ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 server.listen(3000);
+/* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
