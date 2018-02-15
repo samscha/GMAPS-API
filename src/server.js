@@ -25,7 +25,7 @@ const loadFile = _ => {
   places = JSON.parse(fs.readFileSync('places.txt', 'utf8')).places;
 };
 
-// loadFile();
+loadFile();
 
 server.get('/places', (req, res) => {
   console.log(places);
@@ -38,8 +38,6 @@ server.get('/places', (req, res) => {
 
 server.post('/places', (req, res) => {
   const q = req.body.query;
-  const type = req.body.type;
-  const city = req.body.city;
 
   if (!q) {
     res.status(STATUS.USER_ERROR).send({ err: 'no query specified in body' });
@@ -59,10 +57,8 @@ server.post('/places', (req, res) => {
       );
       writeToFile();
     })
-    .then(res.status(STATUS.OK).send('OK'))
+    .then(res.status(STATUS.OK).send('Search successful.'))
     .catch(err => console.error(err));
-
-  // res.status(STATUS.OK).send('ok');
 });
 
 server.listen(3000);
