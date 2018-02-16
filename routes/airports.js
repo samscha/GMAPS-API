@@ -2,6 +2,8 @@ const express = require('express');
 const fetch = require('node-fetch');
 const config = require('../config.js');
 
+const cache = require('../cache/cache');
+
 const router = express.Router();
 
 const status = config.STATUS;
@@ -14,9 +16,15 @@ router.get('/', (req, res) => {
   const q = req.query.query;
   const textSearchURL = `${textSearchBaseURL}&type=airport&query=${q}`;
 
+  if (cache[textSearchURL]) {
+    res.status(status.OK).send(cache[textSearchURL]);
+    return;
+  }
+
   fetch(textSearchURL)
     .then(response => response.json())
-    .then(data => res.status(status.OK).send(data.results))
+    .then(data => (cache[textSearchURL] = data.results))
+    .then(_ => res.status(status.OK).send(cache[textSearchURL]))
     .catch(err => console.log(err));
 });
 
