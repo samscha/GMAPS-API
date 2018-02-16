@@ -15,8 +15,9 @@ const port = config.port;
 
 const key = config.gMap.key;
 const output = config.OUTPUT_TYPE;
-const textSearchURL = config.gMap.textSearchURL;
-const detailSearchURL = config.gMap.detailSearchURL;
+const baseURL = config.gMap.baseURL;
+const textSearchBaseURL = `${baseURL}/textsearch/${output}?key=${key}`;
+const detailedSearchBaseURL = `${baseURL}/details/${output}?key=${key}`;
 
 const server = express();
 server.use(bodyParser.json());
@@ -29,59 +30,73 @@ const cache = {};
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* METHODS ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
-const fetchData = (res, req, q, n = -1) => {
-  fetch(`${textSearchURL}/${output}?query=${q}&key=${key}`)
+const fetchData = (URL, res) => {
+  return fetch(`${URL}`)
     .then(response => response.json())
-    .then(data => (cache[q] = data.results))
     .then(
-      _ =>
-        n === 1
-          ? fetchDetailedData(res, req, cache[q][0].place_id)
-          : res.status(STATUS.OK).send(cache[q]),
+      data =>
+        data.results ? (cache[URL] = data.results) : (cache[URL] = data.result),
     )
-    .catch(err => console.error(err));
-};
-
-const fetchDetailedData = (res, req, placeId) => {
-  if (cache[placeId] !== undefined) {
-    res.status(STATUS.OK).send(cache[placeId]);
-    return;
-  }
-
-  fetch(`${detailSearchURL}/${output}?placeid=${placeId}&key=${key}`)
-    .then(response => response.json())
-    .then(data => (cache[placeId] = data.result))
-    .then(_ => res.status(STATUS.OK).send(cache[placeId]))
+    .then(_ => (res ? res.status(STATUS.OK).send(cache[URL]) : null))
     .catch(err => console.log(err));
 };
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SCRIPTS *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
+// none
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SERVER ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
-server.get('/place', (req, res) => {
-  const q = req.query.query;
+server.get('/places', (req, res) => {
+  const q = req.query.query.split(' ').join('+');
+  const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}`;
 
-  if (cache[q] !== undefined) {
-    res.status(STATUS.OK).send(cache[q][0]);
+  if (cache[TEXTSEARCH_URL] !== undefined) {
+    res.status(STATUS.OK).send(cache[TEXTSEARCH_URL]);
     return;
   }
 
-  fetchData(res, req, q, 1);
+  fetchData(TEXTSEARCH_URL, res);
 });
 
-server.get('/places', (req, res) => {
-  const q = req.query.query;
+server.get('/place', (req, res) => {
+  const q = req.query.query.split(' ').join('+');
+  const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}`;
 
-  if (cache[q] !== undefined) {
-    res.status(STATUS.OK).send(cache[q]);
+  if (cache[TEXTSEARCH_URL] !== undefined) {
+    const placeId = cache[TEXTSEARCH_URL][0].place_id;
+    const DETAILS_URL = `${detailedSearchBaseURL}&placeid=${placeId}`;
+
+    if (cache[DETAILS_URL] !== undefined) {
+      res.status(STATUS.OK).send(cache[DETAILS_URL]);
+      return;
+    }
+
+    fetchData(DETAILS_URL, res);
     return;
   }
 
-  fetchData(res, req, q);
+  fetchData(TEXTSEARCH_URL).then(_ => {
+    const placeId = cache[TEXTSEARCH_URL][0].place_id;
+    const DETAILS_URL = `${detailedSearchBaseURL}&placeid=${placeId}`;
+
+    fetchData(DETAILS_URL, res);
+    return;
+  });
+});
+
+server.get('/airports', (req, res) => {
+  const q = req.query.query.split(' ').join('+');
+  const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}&type=airport`;
+
+  if (cache[TEXTSEARCH_URL]) {
+    res.status(STATUS.OK).send(cache[TEXTSEARCH_URL]);
+    return;
+  }
+
+  fetchData(TEXTSEARCH_URL, res);
 });
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
