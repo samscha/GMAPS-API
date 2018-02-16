@@ -12,7 +12,7 @@ const textSearchBaseURL = `${baseURL}/textsearch/${output}?key=${key}`;
 
 router.get('/', (req, res) => {
   const q = req.query.query;
-  const textSearchURL = `${textSearchBaseURL}&query=${q}`;
+  const textSearchURL = `${textSearchBaseURL}&type=airport&query=${q}`;
 
   fetch(textSearchURL)
     .then(response => response.json())
