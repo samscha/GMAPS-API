@@ -99,6 +99,32 @@ server.get('/airports', (req, res) => {
   fetchData(TEXTSEARCH_URL, res);
 });
 
+server.get('/airport', (req, res) => {
+  const q = req.query.query.split(' ').join('+');
+  const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}&type=airport`;
+
+  if (cache[TEXTSEARCH_URL] !== undefined) {
+    const placeId = cache[TEXTSEARCH_URL][0].place_id;
+    const DETAILS_URL = `${detailedSearchBaseURL}&placeid=${placeId}`;
+
+    if (cache[DETAILS_URL] !== undefined) {
+      res.status(STATUS.OK).send(cache[DETAILS_URL]);
+      return;
+    }
+
+    fetchData(DETAILS_URL, res);
+    return;
+  }
+
+  fetchData(TEXTSEARCH_URL).then(_ => {
+    const placeId = cache[TEXTSEARCH_URL][0].place_id;
+    const DETAILS_URL = `${detailedSearchBaseURL}&placeid=${placeId}`;
+
+    fetchData(DETAILS_URL, res);
+    return;
+  });
+});
+
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* LISTEN ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
