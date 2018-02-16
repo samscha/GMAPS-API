@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const fetch = require('node-fetch');
 const config = require('../config.js');
+const places = require('../routes/places.js');
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ CONSTANTS *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
@@ -21,6 +22,7 @@ const detailedSearchBaseURL = `${baseURL}/details/${output}?key=${key}`;
 
 const server = express();
 server.use(bodyParser.json());
+server.use('/places', places);
 
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ CACHE *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* */
@@ -81,12 +83,12 @@ const fetchData = (URL, res) => {
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* SERVER ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
 /* ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ */
-server.get('/places', (req, res) => {
-  const q = req.query.query.split(' ').join('+');
-  const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}`;
+// server.get('/places', (req, res) => {
+//   const q = req.query.query.split(' ').join('+');
+//   const TEXTSEARCH_URL = `${textSearchBaseURL}&query=${q}`;
 
-  textSearchSearch(TEXTSEARCH_URL, res);
-});
+//   textSearchSearch(TEXTSEARCH_URL, res);
+// });
 
 server.get('/place', (req, res) => {
   const q = req.query.query.split(' ').join('+');
